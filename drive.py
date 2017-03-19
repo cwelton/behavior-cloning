@@ -47,10 +47,13 @@ controller = SimplePIController(0.1, 0.002)
 set_speed = 30
 controller.set_desired(set_speed)
 
+oversteer = 0.25
 
 @sio.on('telemetry')
 def telemetry(sid, data):
     if data:
+        global last
+        
         # The current steering angle of the car
         steering_angle = data["steering_angle"]
         # The current throttle of the car
@@ -63,9 +66,15 @@ def telemetry(sid, data):
         image_array = np.asarray(image)
         steering_angle = float(model.predict(image_array[None, :, :, :], batch_size=1))
 
+        # Brake when requested steering angle is high
+        controller.set_desired(set_speed*(1 - abs(steering_angle)))
+
+        # Cap the steering angle range
+        steering_angle = max(-oversteer, min(oversteer, steering_angle))
+
         throttle = controller.update(float(speed))
 
-        print(steering_angle, throttle)
+        #print(steering_angle, throttle, data.keys())
         send_control(steering_angle, throttle)
 
         # save frame
@@ -73,6 +82,9 @@ def telemetry(sid, data):
             timestamp = datetime.utcnow().strftime('%Y_%m_%d_%H_%M_%S_%f')[:-3]
             image_filename = os.path.join(args.image_folder, timestamp)
             image.save('{}.jpg'.format(image_filename))
+            with open(os.path.join(args.image_folder, 'driving_log.csv'), "a") as f:
+                f.write("{}.jpg,{}\n".format(image_filename, steering_angle))
+                
     else:
         # NOTE: DON'T EDIT THIS.
         sio.emit('manual', data={}, skip_sid=True)
@@ -128,6 +140,7 @@ if __name__ == '__main__':
         else:
             shutil.rmtree(args.image_folder)
             os.makedirs(args.image_folder)
+            
         print("RECORDING THIS RUN ...")
     else:
         print("NOT RECORDING THIS RUN ...")
