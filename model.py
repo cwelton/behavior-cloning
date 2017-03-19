@@ -116,8 +116,11 @@ def main():
     The generator will also randomly flip images/angles or inject images from
     the the side cameras.
     """
-    buckets = bucketize_data(data)
-    train_generator = datagen(buckets)
+    train, test = train_test_split(data, test_size=0.15)
+    train_buckets = bucketize_data(train)
+    train_generator = datagen(train_buckets)
+    test_buckets = bucketize_data(test)
+    test_generator = datagen(test_buckets)
     
 
     """
@@ -150,8 +153,12 @@ def main():
     """
     Train and save the model
     """
-    model.fit_generator(train_generator, samples_per_epoch=32*100,
-                        initial_epoch=8, nb_epoch=12)
+    model.fit_generator(train_generator,
+                        validation_data=test_generator,
+                        samples_per_epoch=32*100,
+                        nb_val_samples=16*25,
+                        initial_epoch=8,
+                        nb_epoch=12)
     model.save(modelname)
 
 if __name__ == '__main__':
