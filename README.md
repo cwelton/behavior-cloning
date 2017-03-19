@@ -8,13 +8,13 @@ The goals / steps of this project are the following:
 * Summarize the results with a written report
 
 ## Rubric Points
-###Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/432/view) individually 
+### Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/432/view) individually 
 and describe how I addressed each point in my implementation.
 
 ---
-###Files Submitted & Code Quality
+### Files Submitted & Code Quality
 
-####1. Submission includes all required files and can be used to run the simulator in autonomous mode
+#### 1. Submission includes all required files and can be used to run the simulator in autonomous mode
 
 My project includes the following files:
 * model.py containing the script to create and train the model
@@ -22,21 +22,21 @@ My project includes the following files:
 * model.h5 containing a trained convolution neural network 
 * README.md summarizing the results
 
-####2. Submission includes functional code
+#### 2. Submission includes functional code
 Using the Udacity provided simulator and my drive.py file, the car can be driven autonomously around the 
 track by executing 
 ```sh
 python drive.py model.h5
 ```
 
-####3. Submission code is usable and readable
+#### 3. Submission code is usable and readable
 
 The model.py file contains the code for training and saving the convolution neural network. The file shows 
 the pipeline I used for training and validating the model, and it contains comments to explain how the code works.
 
-###Model Architecture and Training Strategy
+### Model Architecture and Training Strategy
 
-####1. An appropriate model architecture has been employed
+#### 1. An appropriate model architecture has been employed
 
 My model consists of a convolution neural network based on the [NVIDIA architecture](https://arxiv.org/pdf/1604.07316v1.pdf), 
 [lines 162-175 in model.py](https://github.com/cwelton/behavior-cloning/blob/master/model.py#L162-L175)
@@ -46,7 +46,7 @@ This consists of a series of convolutional layers followed by three dense layers
 The model includes RELU activation functions in each of the convolution layers to introduce nonlinearity, 
 and the data is normalized in the model using a Keras lambda layer (model.py line 162). 
 
-####2. Attempts to reduce overfitting in the model
+#### 2. Attempts to reduce overfitting in the model
 
 The model contains dropout layers in order to reduce overfitting (model.py lines 171 and 173). 
 
@@ -54,11 +54,11 @@ The model was trained and validated on different data sets to ensure that the mo
 (code line 119-124). The model was tested by running it through the simulator and ensuring that the vehicle 
 could stay on the track.
 
-####3. Model parameter tuning
+#### 3. Model parameter tuning
 
 The model used an adam optimizer, so the learning rate was not tuned manually (model.py line 175).
 
-####4. Appropriate training data
+#### 4. Appropriate training data
 
 Training data was chosen to keep the vehicle driving on the road. 
 
@@ -73,9 +73,9 @@ moving back towards center and the angles are pruned back to less severe recover
 
 For details about how I created the training data, see the next section. 
 
-###Model Architecture and Training Strategy
+### Model Architecture and Training Strategy
 
-####1. Solution Design Approach
+#### 1. Solution Design Approach
 
 The overall strategy for deriving a model architecture was to begin with some well known architectures and modify 
 them as needed to achieve a quality model.
@@ -106,7 +106,7 @@ to reduce, but not eliminate this tendency.
 At the end of the process, the vehicle is able to drive autonomously around the track without leaving the road and 
 minimal crossing into the lane markers.
 
-####2. Final Model Architecture
+#### 2. Final Model Architecture
 
 The final model architecture is a modified NVIDIA architecture, 
 [lines 162-175 in model.py](https://github.com/cwelton/behavior-cloning/blob/master/model.py#L162-L175)
@@ -114,25 +114,27 @@ The final model architecture is a modified NVIDIA architecture,
 ![NVIDIA Architecture](img/nvidia_architecture.png)
 
 
-####3. Creation of the Training Set & Training Process
+#### 3. Creation of the Training Set & Training Process
 
 To capture good driving behavior, I first recorded many laps on track one using center lane driving. 
 Here is an example image of center lane driving:
 
-![Center Lane Driving over Bridge][img/center_2017_03_17_02_00_45_752.jpg]
+![Center Lane Driving over Bridge](img/center_2017_03_17_02_00_45_752.jpg)
 
 I then recorded the vehicle recovering from the left side and right sides of the road back to center so that the vehicle 
 would learn to to correct and move back to the center of the road if it got off course.
 
-![swerve start][img/swerve_1.jpg]
-![swerve middle][img/swerve_2.jpg]
-![swerve end][img/swerve_3.jpg]
+![swerve start](img/swerve_1.jpg)
+
+![swerve middle](img/swerve_2.jpg)
+
+![swerve end](img/swerve_3.jpg)
 
 To augment the data sat, I also flipped images and angles thinking that this would reduce the bias for making left turns 
 around a largely counter clockwise track.
 
-![turn left][img/turn_left.jpg]
-![turn right][img/turn_right.jpg]
+![turn left](img/turn_left.jpg)
+![turn right](img/turn_right.jpg)
 
 
 After the collection process, I had 13442 raw readings, each with center, left, and right cameras. These images are
@@ -150,4 +152,3 @@ under fitting. The ideal number of epochs was a little variable from one run to 
 model it ran for 25 epochs. Evaluation of the model was done both by looking for when the validation_loss stopped
 improving and by validation of how well the car performed on the track. I used an adam optimizer so that manually 
 training the learning rate wasn't necessary.
-
