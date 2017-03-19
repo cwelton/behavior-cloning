@@ -11,13 +11,13 @@ from keras.layers import Flatten, Dense, Lambda, Cropping2D, Convolution2D, Drop
 ### Load Data
 DATADIR = os.path.abspath('../cloning_data')
 SWERVEDIR = os.path.abspath('../cloning_data_swerve')
-logfile = 'driving_log.csv'
-modelname = 'model.h5'
+LOGFILE = 'driving_log.csv'
+MODELNAME = 'model.h5'
 
 # Configuration Parameters
 doflip = True
 useside = True
-sidesteer = 0.225
+sidesteer = 0.20
 
 class Record(object):
     """An input data record captured from the input files
@@ -32,18 +32,24 @@ class Record(object):
         self.angle = float(line[3])
 
 def load_data(location):
-    with open(os.path.join(location, logfile)) as f:
+    """Load a csv datafile from the given directory"""
+    with open(os.path.join(location, LOGFILE)) as f:
         reader = csv.reader(f)
         next(reader, None)  # skip the headers
         return [Record(line) for line in reader]
 
 def bucketize_data(records):
-    buckets = [[] for i in range(4)]
+    buckets = [[] for i in range(3)]
     for record in records:
-        buckets[min(3, int(10*abs(record.angle)))].append(record)
+        if abs(record.angle) < 0.06:
+            buckets[0].append(record)
+        elif abs(record.angle) < 0.16:
+            buckets[1].append(record)
+        else:
+            buckets[2].append(record)
     return [shuffle(b) for b in buckets]
 
-def doplot():
+def doplot(records):
     import matplotlib.pyplot as plt
     steer = [int(10*abs(record.angle)) for record in records]
     plt.hist(steer, bins='auto')
@@ -65,7 +71,7 @@ def image_angle(record):
         angle = -angle
     return (image, angle)
 
-def datagen(buckets, batch_size=32):
+def datagen(buckets, batch_size=30):
     i = 0
     assert(batch_size % len(buckets) == 0)
     while True:
@@ -81,6 +87,20 @@ def datagen(buckets, batch_size=32):
             i += 1
             yield (np.array(images), np.array(angles))
 
+def validgen(records, batch_size=32):
+    num_samples = len(records)
+    while True:
+        for offset in range(0, num_samples, batch_size):
+            batch_samples = records[offset:offset+batch_size]
+            images = []
+            angles = []
+            for batch_sample in batch_samples:
+                image, angle = image_angle(batch_sample)
+                images.append(image)
+                angles.append(angle)
+
+            yield (np.array(images), np.array(angles))
+                
 
 def main():
 
@@ -106,6 +126,8 @@ def main():
             record.angle *= 0.8     # dataset over compensates
             data.append(record)
 
+        prev = record.angle
+        
     """
     Allocate the training data into buckets based on steering angle and create
     a streaming data generator from it.  
@@ -119,17 +141,19 @@ def main():
     train, test = train_test_split(data, test_size=0.15)
     train_buckets = bucketize_data(train)
     train_generator = datagen(train_buckets)
-    test_buckets = bucketize_data(test)
-    test_generator = datagen(test_buckets)
-    
+    test_generator = validgen(test)
+
+    print("Training Size {}".format(len(train)))
+    print("  buckets {}".format([len(b) for b in train_buckets]))
+    print("Validation Size {}".format(len(test)))
 
     """
     Load or create the model.  In this case we are using a slightly modified
     version of the NVIDEA model, with added dropout layers to increase robustness
     of the data.
     """
-    if os.path.exists(modelname):
-        model = load_model(modelname)
+    if os.path.exists(MODELNAME):
+        model = load_model(MODELNAME)
     else:
         (row, col, ch) = (160, 320, 3)
         model = Sequential()
@@ -153,13 +177,14 @@ def main():
     """
     Train and save the model
     """
-    model.fit_generator(train_generator,
-                        validation_data=test_generator,
-                        samples_per_epoch=32*100,
-                        nb_val_samples=16*25,
-                        initial_epoch=8,
-                        nb_epoch=12)
-    model.save(modelname)
+    for i in range(10):
+        model.fit_generator(train_generator,
+                            validation_data=test_generator,
+                            samples_per_epoch=30*100,
+                            nb_val_samples=len(test),
+                            initial_epoch=5*i,
+                            nb_epoch=5*(i+1))
+        model.save("{}.{}".format(MODELNAME, i))
 
 if __name__ == '__main__':
     main()
